@@ -15,6 +15,7 @@ HGEMM_FUNC(simtNaive);
 
 HGEMM_FUNC(wmmaNaive);
 HGEMM_FUNC(wmmaBase);
+HGEMM_FUNC(wmmaBaseOurs);
 HGEMM_FUNC(wmmaPadding);
 HGEMM_FUNC(wmmaAsync);
 HGEMM_FUNC(wmmaAsyncPg2s);
@@ -100,9 +101,11 @@ int main(int argc, char *argv[]) {
     tester.evaluate(cublasTensorOp, "Cublas-Tensor-Op");
     // tester.evaluate(simtNaive, "Simt-Naive");
 
+    tester.evaluate(wmmaBaseOurs, "Wmma-Base-Ours");
+
     if (FLAGS_enable_wmma) {
-        // tester.evaluate(wmmaNaive, "Wmma-Naive");
-        // tester.evaluate(wmmaBase, "Wmma-Base");
+        tester.evaluate(wmmaNaive, "Wmma-Naive");
+        tester.evaluate(wmmaBase, "Wmma-Base");
         tester.evaluate(wmmaPadding, "Wmma-Padding");
         tester.evaluate(wmmaAsync, "Wmma-Async");
         tester.evaluate(wmmaAsyncPg2s, "Wmma-Async-Pg2s");
