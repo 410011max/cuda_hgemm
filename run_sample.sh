@@ -10,19 +10,24 @@ set -euo pipefail
 
 WORK_PATH=$(cd $(dirname $0) && pwd) && cd $WORK_PATH
 
-rm -rf log ncu && mkdir -p log ncu
+# rm -rf log ncu && mkdir -p log ncu
+
+enable_wmma=false
+enable_mma=false
+
+enable_check=true
 
 # $1: M. $2: N, $3: K
 evaluate_hgemm() {
     echo "Evaluating $1 * $2 * $3"
-    $WORK_PATH/output/bin/hgemm -M=$1 -N=$2 -K=$3 -enable_wmma=true -enable_mma=true -warmup_iterations=1 -profiling_iterations=10 -sleep_duration=100 -enable_check=false > log/hgemm_${1}_${2}_${3}.log 2>&1
+    $WORK_PATH/output/bin/hgemm -M=$1 -N=$2 -K=$3 -enable_wmma=$enable_wmma -enable_mma=$enable_mma -warmup_iterations=1 -profiling_iterations=10 -sleep_duration=100 -enable_check=$enable_check > log/hgemm_${1}_${2}_${3}.log 2>&1
     sleep 3
 }
 
 # $1: M. $2: N, $3: K
 ncu_hgemm() {
     echo "NCU $1 * $2 * $3"
-    sudo ncu --set full --target-processes all --force-overwrite -o ncu/hgemm_${1}_${2}_${3} $WORK_PATH/output/bin/hgemm -M=$1 -N=$2 -K=$3 -enable_wmma=true -enable_mma=true -warmup_iterations=1 -profiling_iterations=1 -sleep_duration=100 -enable_check=false > log/ncu_hgemm_${1}_${2}_${3}.log 2>&1
+    ncu --set full --target-processes all --force-overwrite -o ncu/hgemm_${1}_${2}_${3} $WORK_PATH/output/bin/hgemm -M=$1 -N=$2 -K=$3 -enable_wmma=$enable_wmma -enable_mma=$enable_mma -warmup_iterations=1 -profiling_iterations=1 -sleep_duration=100 -enable_check=$enable_check > log/ncu_hgemm_${1}_${2}_${3}.log 2>&1
     sleep 3
 }
 
@@ -57,7 +62,14 @@ benchmark_hgemm() {
     # done
 }
 
-nohup $WORK_PATH/output/bin/hgemm -M=512 -N=2048 -K=1024 -enable_wmma=true -enable_mma=true -warmup_iterations=1 -profiling_iterations=10 -sleep_duration=100 -enable_check=true > log/hgemm_512_2048_1024.log 2>&1 &
-# sudo ncu --set full --target-processes all --force-overwrite -o ncu/hgemm_512_2048_1024 $WORK_PATH/output/bin/hgemm -M=512 -N=2048 -K=1024 -enable_wmma=true -enable_mma=true -warmup_iterations=1 -profiling_iterations=1 -sleep_duration=100 -enable_check=false > log/ncu_hgemm_512_2048_1024.log 2>&1
+# nohup $WORK_PATH/output/bin/hgemm -M=512 -N=2048 -K=1024 -enable_wmma=$enable_wmma -enable_mma=$enable_mma -warmup_iterations=1 -profiling_iterations=10 -sleep_duration=100 -enable_check=true > log/hgemm_512_2048_1024.log 2>&1 &
+# ncu --set full --target-processes all --force-overwrite -o ncu/hgemm_512_2048_1024 $WORK_PATH/output/bin/hgemm -M=512 -N=2048 -K=1024 -enable_wmma=$enable_wmma -enable_mma=$enable_mma -warmup_iterations=1 -profiling_iterations=1 -sleep_duration=100 -enable_check=$enable_check > log/ncu_hgemm_512_2048_1024.log 2>&1
 
 # benchmark_hgemm
+
+
+# M N K (seqlen, dim, rank)
+evaluate_hgemm 512 4096 64
+# evaluate_hgemm 4096 128 64
+# ncu_hgemm 4096 128 64
+
